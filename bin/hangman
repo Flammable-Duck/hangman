@@ -1,0 +1,9 @@
+#!/bin/ruby
+# frozen_string_literal: true
+
+require_relative '../lib/hangman'
+
+game = HangmanGame.new
+game.play
+
+# vim: syntax=ruby
