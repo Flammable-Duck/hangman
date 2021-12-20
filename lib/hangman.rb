@@ -2,32 +2,29 @@
 
 # the main game
 class HangmanGame
-  def play
-    guesses_left = 12
-    word = random_word
-    guessed_word = Array.new(word.length).map { '_' }
-    p word
-    turns = 0
-    loop do
-      # this loop needs to be refactored into like 3 smaller functions lol
-      turns += 1
-      puts "#{guessed_word.join}, #{guesses_left} guesses left."
-      guess = make_guess
+  def initialize
+    @word = random_word
+    @guessed_word = Array.new(@word.length).map { '_' }
+    @guesses_left = 12
+    @turns = 0
+  end
 
-      if word.include?(guess)
-        guessed_word = word.split('').map.with_index do |char, index|
-          char == guess ? char : guessed_word[index]
-        end
-        if word == guessed_word.join
-          puts "You guessed the word: #{word} in #{turns} turns!"
-          break
-        end
-        next
+  def play
+    p @word
+    loop do
+      @turns += 1
+      puts "#{@guessed_word.join}, #{@guesses_left} guesses left."
+
+      @guessed_word = update_guessed_word(make_guess)
+
+      if @word == @guessed_word.join
+        puts "You guessed the word: #{@word} in #{@turns} turns!"
+        break
       end
 
-      guesses_left -= 1
-      if guesses_left.zero?
-        puts "No more guesses left!\nSecret word was #{word}"
+      @guesses_left -= 1
+      if @guesses_left.zero?
+        puts "No more guesses left!\nSecret word was #{@word}"
         break
       end
     end
@@ -35,13 +32,19 @@ class HangmanGame
 
   private
 
-  def make_guess
-    begin
-      system('stty raw -echo')
-      $stdin.getc
-    ensure
-      system('stty -raw echo')
+  def update_guessed_word(letter)
+    return @guessed_word unless @word.downcase.include?(letter.downcase)
+
+    @word.split('').map.with_index do |char, index|
+      char.downcase == letter.downcase ? char : @guessed_word[index]
     end
+  end
+
+  def make_guess
+    system('stty raw -echo')
+    $stdin.getc
+  ensure
+    system('stty -raw echo')
   end
 
   def random_word
