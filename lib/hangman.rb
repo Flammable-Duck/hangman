@@ -1,30 +1,31 @@
 # frozen_string_literal: true
 
+require 'msgpack'
+
 # the main game
 class HangmanGame
-  def initialize
-    @word = random_word
-    @guessed_word = Array.new(@word.length).map { '_' }
-    @guesses_left = 12
-    @turns = 0
+  def initialize(save = nil, cheat: false)
+    if save.nil?
+      @word = random_word.freeze
+      puts @word if cheat == true
+      @guessed_word = Array.new(@word.length).map { '_' }
+      @incorrect_letters = []
+      @max_incorrect = 6
+    end
   end
 
-  def play
-    p @word
+  def play()
     loop do
-      @turns += 1
-      puts "#{@guessed_word.join}, #{@guesses_left} guesses left."
+      status
+      update_guessed_word(make_guess)
 
-      @guessed_word = update_guessed_word(make_guess)
-
-      if @word == @guessed_word.join
-        puts "You guessed the word: #{@word} in #{@turns} turns!"
+      if @incorrect_letters.length == @max_incorrect
+        puts "Out of guesses. The word was \"#{@word}\""
         break
       end
 
-      @guesses_left -= 1
-      if @guesses_left.zero?
-        puts "No more guesses left!\nSecret word was #{@word}"
+      if @word == @guessed_word.join
+        puts "You guessed the word \"#{@word}\""
         break
       end
     end
@@ -32,19 +33,45 @@ class HangmanGame
 
   private
 
-  def update_guessed_word(letter)
-    return @guessed_word unless @word.downcase.include?(letter.downcase)
-
-    @word.split('').map.with_index do |char, index|
-      char.downcase == letter.downcase ? char : @guessed_word[index]
+  def update_guessed_word(guess)
+    unless @word.split('').include?(guess)
+      @incorrect_letters.append(guess)
+      puts 'Incorrect!'
+    end
+    @word.split('').each_with_index do |letter, index|
+      @guessed_word[index] = letter if letter == guess && @guessed_word[index] == '_'
     end
   end
 
+  def status
+    puts "#{@guessed_word.join} | #{@max_incorrect - @incorrect_letters.length} guesses left"
+    puts @incorrect_letters.join(', ')
+  end
+
   def make_guess
+    puts 'guess a letter'
     system('stty raw -echo')
-    $stdin.getc
+
+    input = $stdin.getc
+
+    if input == ''
+      puts 'saving...'
+      save
+      puts 'quitting...'
+      exit
+    end
+    return input
   ensure
     system('stty -raw echo')
+  end
+
+  def save
+    {
+      word: @word,
+      guessed_word: @guessed_word,
+      incorrect_letters: @incorrect_letters,
+      max_incorrect: @max_incorrect
+    }.to_msgpack
   end
 
   def random_word
