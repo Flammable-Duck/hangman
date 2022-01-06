@@ -3,7 +3,21 @@
 
 require_relative '../lib/hangman'
 
-game = HangmanGame.new
+if File.exist?("#{__dir__}/../saves/save")
+  puts 'save file detected. would you like to load your last game? y/n'
+  system('stty raw -echo')
+  input = $stdin.getc
+  system('stty -raw echo')
+
+  if input == 'y'
+    game = HangmanGame.new("#{__dir__}/../saves/save")
+  else
+    game = HangmanGame.new
+  end
+else
+  game = HangmanGame.new
+end
+
 game.play
 
 # vim: syntax=ruby
